@@ -1,0 +1,19 @@
+html,
+body {
+ background-color: #f2f2f2;
+ color: #202020;
+ height: 100vh;
+ max-height: 100%;
+ overflow: hidden;
+}
+
+html,
+body,
+input,
+select,
+textarea,
+button {
+ font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+ font-size: 18px;
+ line-height: 1.5;
+}
