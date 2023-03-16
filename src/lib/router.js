@@ -10,10 +10,16 @@ function loadRoutes([routesString]) {
 }
 
 const routes = loadRoutes`
+ data
  default
+ session
 `
 
-const routeMap = {}
+const routeMap = {
+ 'GET /data': routes.data.read,
+ 'POST /data': routes.data.write,
+ 'POST /session/create': routes.session.create
+}
 
 module.exports = async function ({
  modules,
@@ -24,7 +30,7 @@ module.exports = async function ({
  response,
  rootPath,
 }) {
- const handler = routeMap[`${request.method} ${request.path}`] ?? routes.default
+ const handler = routeMap[`${request.method} ${requestPath}`] ?? routes.default
  const {
   statusCode = 200,
   contentType = 'text/plain; charset=utf-8',

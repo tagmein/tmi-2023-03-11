@@ -1,0 +1,10 @@
+<link href="/main.css" rel="stylesheet" type="text/css" />
+<form>
+ <p>You are now signed out</p>
+ <script>
+  window.top.postMessage({
+   type: 'signout'
+  }, '*')
+ </script>
+ <p><a target="_top" class="button" href="/#">Continue</a></p>
+</form>

@@ -1,22 +1,12 @@
 define('navigate', async function () {
- const flushDelay = 1000
+ const flushDelay = 100
  let flushTimer
  function readState() {
-  try {
-   return JSON.parse(
-    decodeURIComponent(
-     window.location.hash.substring(1)
-    )
-   )
-  } catch (e) {
-   return {}
-  }
+  return window.location.hash.substring(1)
  }
  let state = readState()
  function flush() {
-  window.location.hash = encodeURIComponent(
-   JSON.stringify(state)
-  )
+  window.location.hash = state
   flushTimer = undefined
  }
  const syncStateToListeners = []

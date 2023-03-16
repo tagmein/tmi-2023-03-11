@@ -1,0 +1,32 @@
+<link href="/main.css" rel="stylesheet" type="text/css">
+<form action="/session/create" method="POST" enctype="multipart/form-data">
+ <h1>Sign in</h1>
+ <label>
+  <div>Email</div>
+  <input id="sign-in-email"
+   name="email"
+   placeholder="email@example.com"
+   required
+   type="text"
+  />
+ </label>
+ <label>
+  <div>Password</div>
+  <input
+   minlength="8"
+   name="password"
+   placeholder="••••••••"
+   required
+   type="password"
+  />
+ </label>
+ <label>
+  <input type="checkbox" name="register" value="register" />
+  Register a new account
+ </label>
+ <p>
+  By signing in, you are agreeing to the
+  <a target="_top" href="/#documents/terms">Terms and Conditions</a>
+ </p>
+ <input type="submit" value="Sign in" />
+</form>
