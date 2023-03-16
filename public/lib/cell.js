@@ -225,8 +225,8 @@ define('cell', async function (load) {
   }
  }
 
- function handleFrameMessage(event) {
-  console.log('event', event.data)
+ async function handleFrameMessage(event) {
+  // console.log('event', event)
   const { type } = event.data
   switch (type) {
    case 'signin':
@@ -237,6 +237,53 @@ define('cell', async function (load) {
    case 'signout':
     for (const variable of ['key', 'email', 'name']) {
      localStorage.removeItem(variable)
+    }
+    break
+   case 'session': {
+    const key = localStorage.getItem('key')
+    event.source.postMessage({
+     type: 'session',
+     session: key
+      ? { id: key.substring(0, 10) }
+      : null
+    }, '*')
+   }
+    break
+
+   case 'fetch':
+    const { url, data, fetchId } = event.data
+    const key = localStorage.getItem('key')
+    try {
+     if (data) {
+      const body = JSON.stringify(data)
+      const response = await fetch(url, {
+       body,
+       headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': body.length,
+        'X-TagMeIn-Key': key
+       },
+       method: 'POST'
+      })
+      const result = await response.json()
+      event.source.postMessage({ type: 'response', result, fetchId }, '*')
+     }
+     else {
+      const response = await fetch(url, {
+       headers: {
+        'X-TagMeIn-Key': key
+       }
+      })
+      const result = await response.json()
+      event.source.postMessage({ type: 'response', result, fetchId }, '*')
+     }
+    }
+    catch (error) {
+     event.source.postMessage({
+      type: 'response',
+      error: error?.message ?? 'unknown error',
+      fetchId
+     }, '*')
     }
     break
   }

@@ -18,7 +18,9 @@ const routes = loadRoutes`
 const routeMap = {
  'GET /data': routes.data.read,
  'POST /data': routes.data.write,
- 'POST /session/create': routes.session.create
+ 'GET /session/list': routes.session.list,
+ 'POST /session/create': routes.session.create,
+ 'POST /session/end': routes.session.end
 }
 
 module.exports = async function ({

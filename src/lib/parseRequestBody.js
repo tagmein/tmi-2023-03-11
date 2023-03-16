@@ -5,11 +5,12 @@ const { multipart } = require('./multipart')
 module.exports = async function (request) {
  return new Promise(function (resolve, reject) {
   let error = false
-  const FORM_ENCODING_MULTIPART = 'multipart/form-data'
+  const ENCODING_MULTIPART = 'multipart/form-data'
+  const ENCODING_JSON = 'application/json'
   const contentTypeHeader = request.headers['content-type'] ?? ''
   const [contentType] = contentTypeHeader.split(';')
   const boundary = multipart.getBoundary(contentTypeHeader)
-  if (contentType === FORM_ENCODING_MULTIPART) {
+  if (contentType === ENCODING_MULTIPART) {
    const bodyChunks = []
    let bodySize = 0
    request.on('data', function (chunk) {
@@ -37,6 +38,28 @@ module.exports = async function (request) {
       }
      }
      resolve(finalData)
+    }
+   })
+  } else if (contentType === ENCODING_JSON) {
+   const bodyChunks = []
+   let bodySize = 0
+   request.on('data', function (chunk) {
+    if (!error) {
+     bodyChunks.push(chunk)
+     bodySize += chunk.length
+     if (bodySize > MAX_REQUEST_BODY_SIZE) {
+      error = true
+      reject(
+       new Error(
+        `request body size cannot exceed ${MAX_REQUEST_BODY_SIZE} bytes`
+       )
+      )
+     }
+    }
+   })
+   request.on('end', function () {
+    if (!error) {
+     resolve(JSON.parse(Buffer.concat(bodyChunks)))
     }
    })
   } else {

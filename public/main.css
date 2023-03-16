@@ -5,7 +5,7 @@ body {
  height: 100vh;
  margin: 0;
  max-height: 100%;
- overflow-x: hidden;
+ overflow-x: auto;
  overflow-y: auto;
  padding: 0;
 }
@@ -129,6 +129,23 @@ a.button:hover {
  background-color: #4079a9;
 }
 
+input[type="submit"]:disabled,
+button:disabled,
+a.button:disabled,
+input[type="submit"][disabled="disabled"],
+button[disabled="disabled"],
+a.button[disabled="disabled"] {
+ opacity: 0.25;
+ pointer-events: none;
+}
+
 p a {
  color: #004979;
+}
+
+.error {
+ background-color: #c9a9a9;
+ color: #794949;
+ flex-grow: 1;
+ padding: 10px;
 }

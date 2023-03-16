@@ -1,0 +1,94 @@
+<link href="/main.css" rel="stylesheet" type="text/css" />
+<script src="/tagmein-client.js"></script>
+<table id="session-list" class="list">
+ <tr>
+  <th>Session ID</th>
+  <th>Timestamp</th>
+  <th>User agent</th>
+  <th>Action</th>
+ </tr>
+</table>
+<style>
+ .list {
+  border-collapse: collapse;
+  width: 100%;
+ }
+
+ .list th {
+  font-weight: bold;
+  text-align: left;
+  color: #797979;
+  padding: 10px 10px 0;
+ }
+
+ .list td {
+  padding: 10px;
+ }
+
+ .list td button {
+  margin-top: 0;
+ }
+
+ .session {
+  border-bottom: 1px solid #c9c9c9;
+ }
+
+</style>
+<script>
+ async function sessionList() {
+  const sessions = await TagMeIn.get('/session/list')
+  const sessionsContainer = document.getElementById('session-list')
+  if (sessions.error) {
+   document.body.innerHTML = ''
+   const errorElement = document.createElement('div')
+   errorElement.innerText = sessions.error
+   errorElement.classList.add('error')
+   document.body.appendChild(errorElement)
+   return
+  }
+  sessions.forEach(session => {
+   const sessionRow = document.createElement('tr')
+   sessionRow.classList.add('session')
+   const sessionCells = {
+    id: document.createElement('td'),
+    timestamp: document.createElement('td'),
+    useragent: document.createElement('td'),
+    action: document.createElement('td'),
+   }
+   for (const element of [
+    sessionCells.id,
+    sessionCells.timestamp,
+    sessionCells.useragent,
+    sessionCells.action
+   ]) {
+    sessionRow.appendChild(element)
+   }
+   sessionCells.id.innerText = session.id
+    + (session.current ? ' (current)' : '')
+   sessionCells.timestamp.innerText = session.data.timestamp
+    ? new Date(session.data.timestamp).toLocaleString()
+    : 'unknown'
+   sessionCells.useragent.innerText = session.data.useragent ?? 'unknown'
+   const endSession = document.createElement('button')
+   sessionCells.action.appendChild(endSession)
+   endSession.innerText = 'End'
+   if (session.current) {
+    endSession.setAttribute('disabled', 'disabled')
+   }
+   else {
+    endSession.addEventListener('click', async function () {
+     endSession.setAttribute('disabled', 'disabled')
+     const result = await TagMeIn.post('/session/end', { id: session.id })
+     if (result.completed) {
+      sessionsContainer.removeChild(sessionRow)
+     }
+     else {
+      endSession.removeAttribute('disabled')
+     }
+    })
+   }
+   sessionsContainer.appendChild(sessionRow)
+  })
+ }
+ window.addEventListener('DOMContentLoaded', sessionList)
+</script>
