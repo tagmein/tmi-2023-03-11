@@ -1,13 +1,5 @@
 <link href="/main.css" rel="stylesheet" type="text/css" />
 <script src="/tagmein-client.js"></script>
-<table id="session-list" class="list">
- <tr>
-  <th>Session ID</th>
-  <th>Timestamp</th>
-  <th>User agent</th>
-  <th>Action</th>
- </tr>
-</table>
 <style>
  .list {
   border-collapse: collapse;
@@ -92,3 +84,15 @@
  }
  window.addEventListener('DOMContentLoaded', sessionList)
 </script>
+
+<form>
+ <h1>Active sessions</h1>
+ <table id="session-list" class="list">
+  <tr>
+   <th>Session ID</th>
+   <th>Timestamp</th>
+   <th>User agent</th>
+   <th>Action</th>
+  </tr>
+ </table>
+</form>

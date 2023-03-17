@@ -102,13 +102,13 @@ define('cell', async function (load) {
    }
    
    &[data-type="directory"]:before {
-    content: "\\1F5BF";
+    content: "📁";
     display: inline-block;
-    margin-right: 3px;
+    margin-right: 5px;
    }
   
    &[data-type="file"]:before {
-    content: "\\1F5B9";
+    content: "📄";
     display: inline-block;
     margin-right: 5px;
    }
@@ -299,8 +299,8 @@ define('cell', async function (load) {
   const contents = newElement(classes.content)
   const status = newElement(classes.status, 'select')
   status.setAttribute('title', 'Channel to display')
-  element.appendChild(toolbar)
   element.appendChild(account)
+  element.appendChild(toolbar)
   element.appendChild(status)
   element.appendChild(contentToolbar)
   element.appendChild(contents)
