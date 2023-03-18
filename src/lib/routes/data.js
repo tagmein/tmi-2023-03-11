@@ -1,6 +1,10 @@
 const { data } = require('../data')
 const { json } = require('../json')
 
+function decodePath(path) {
+ return path.split('/').map(decodeURIComponent)
+}
+
 module.exports = {
  async read({ request, modules, requestParams, rootPath }) {
   const { fs } = modules
@@ -52,7 +56,7 @@ module.exports = {
         modules.path.join(
          rootPath,
          ...(root === 'common' ? [root] : ['data', root]),
-         ...(requestParams.path?.length ? [decodeURIComponent(requestParams.path)] : [])
+         ...(requestParams.path?.length > 0 ? decodePath(requestParams.path) : [])
         )
        )
       }
@@ -86,7 +90,7 @@ module.exports = {
   if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
-  const [channel, ...segments] = requestBody.path.split('/')
+  const [channel, ...segments] = decodePath(requestBody.path)
   const channelData = await data.read(`channel:${channel}`)
   if (channelData.owner !== session.email) {
    return json({ error: 'unauthorized' })
@@ -120,7 +124,7 @@ module.exports = {
   if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
-  const [channel, ...segments] = requestBody.path.split('/')
+  const [channel, ...segments] = decodePath(requestBody.path)
   const channelData = await data.read(`channel:${channel}`)
   if (channelData.owner !== session.email) {
    return json({ error: 'unauthorized' })
@@ -156,7 +160,7 @@ module.exports = {
   if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
-  const [channel, ...segments] = requestBody.path.split('/')
+  const [channel, ...segments] = decodePath(requestBody.path)
   const channelData = await data.read(`channel:${channel}`)
   if (channelData.owner !== session.email) {
    return json({ error: 'unauthorized' })
@@ -192,7 +196,7 @@ module.exports = {
   if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
-  const [channel, ...segments] = requestBody.path.split('/')
+  const [channel, ...segments] = decodePath(requestBody.path)
   const channelData = await data.read(`channel:${channel}`)
   if (channelData.owner !== session.email) {
    return json({ error: 'unauthorized' })

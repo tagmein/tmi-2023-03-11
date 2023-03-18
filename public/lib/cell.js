@@ -6,6 +6,10 @@ function newElement(className, tagName = 'div') {
  return element
 }
 
+function encodePath(...segments) {
+ return segments.map(encodeURIComponent).join('/')
+}
+
 define('cell', async function (load) {
  const [style, TagMeIn] = await load`
   style
@@ -201,10 +205,12 @@ define('cell', async function (load) {
   account.appendChild(signInOut)
  }
 
+ function decodePath(path) {
+  return path.split('/').map(decodeURIComponent)
+ }
+
  function populateToolbar(toolbar, state) {
-  const segments = state.split('/')
-   .filter(x => x.length > 0)
-   .map(decodeURIComponent)
+  const segments = decodePath(state)
   const channel = segments.shift()
   let path = []
   const homeLink = newElement(classes.link, 'a')
@@ -214,8 +220,8 @@ define('cell', async function (load) {
   for (const segment of segments) {
    const link = newElement(classes.link, 'a')
    path.push(segment)
-   link.innerText = decodeURIComponent(segment)
-   link.setAttribute('href', `/#${channel}/${path.join('/')}`)
+   link.innerText = segment
+   link.setAttribute('href', `/#${channel}/${encodePath(...path)}`)
    toolbar.appendChild(link)
   }
  }
@@ -309,9 +315,7 @@ define('cell', async function (load) {
  window.addEventListener('message', handleFrameMessage, false)
 
  return async function ({ state, updateState }) {
-  const segments = state.split('/')
-   .filter(x => x.length > 0)
-   .map(decodeURIComponent)
+  const segments = decodePath(state)
   const channel = segments.shift()
   if (channel !== 'common' && channel?.length !== 40) {
    updateState(`common${state.length > 0 ? '/' : ''}${state}`)
@@ -376,11 +380,11 @@ define('cell', async function (load) {
    onChange?.(lastToggleState)
   }
   async function changeChannel() {
-   updateState([channelSelect.value, ...segments].join('/'))
+   updateState(encodePath(channelSelect.value, ...segments))
   }
   async function renderSelectedResult() {
    contentToolbar.innerHTML = ''
-   const response = await fetch([channelRoot, ...segments].join('/'))
+   const response = await fetch([channelRoot, encodePath(...segments)].join('/'))
    const htmlContent = await response.text()
    if (htmlContent.startsWith('[')) {
     const list = JSON.parse(htmlContent)
@@ -389,7 +393,7 @@ define('cell', async function (load) {
      const link = newElement(classes.link, 'a')
      link.setAttribute(
       'href',
-      `/#${state}${state.length > 0 ? '/' : ''}${item.name}`
+      `/#${encodePath(channel, ...segments, item.name)}`
      )
      link.innerText = item.name
      link.setAttribute('data-type', item.type)
@@ -410,7 +414,7 @@ define('cell', async function (load) {
       if (!newFileName) {
        return
       }
-      const newPath = [channel, ...segments, newFileName].join('/')
+      const newPath = encodePath(channel, ...segments, newFileName)
       const operationResult = await TagMeIn.newFile(newPath)
       if (!operationResult?.completed) {
        alert('Something went wrong')
@@ -423,7 +427,7 @@ define('cell', async function (load) {
       if (!newFolderName) {
        return
       }
-      const newPath = [channel, ...segments, newFolderName].join('/')
+      const newPath = encodePath(channel, ...segments, newFolderName)
       const operationResult = await TagMeIn.newFolder(newPath)
       if (!operationResult?.completed) {
        alert('Something went wrong')
@@ -461,7 +465,7 @@ define('cell', async function (load) {
      deleteButton.setAttribute('disabled', 'disabled')
      deleteButton.innerText = 'Deleting...'
      try {
-      await TagMeIn.deleteFile([channel, ...segments].join('/'), currentContent)
+      await TagMeIn.deleteFile(encodePath(channel, ...segments), currentContent)
       lastSavedContent = currentContent
      }
      catch (e) {
@@ -469,13 +473,13 @@ define('cell', async function (load) {
       deleteButton.removeAttribute('disabled')
      }
      deleteButton.innerText = 'Delete'
-     updateState([channel, ...segments.slice(0, segments.length - 1)].join('/'))
+     updateState(encodePath(channel, ...segments.slice(0, segments.length - 1)))
     })
     saveButton.addEventListener('click', async function () {
      saveButton.setAttribute('disabled', 'disabled')
      saveButton.innerText = 'Saving...'
      try {
-      await TagMeIn.writeFile([channel, ...segments].join('/'), currentContent)
+      await TagMeIn.writeFile(encodePath(channel, ...segments), currentContent)
       lastSavedContent = currentContent
      }
      catch (e) {
@@ -524,7 +528,7 @@ define('cell', async function (load) {
   }
   channelSelect.addEventListener('change', changeChannel)
   async function run() {
-   const data = await TagMeIn.read(segments.join('/'), channel)
+   const data = await TagMeIn.read(encodePath(...segments), channel)
    if (Object.keys(data?.results ?? {}).length > 0) {
     lastResults = data.results
     populateChannelSelect(channelSelect, channel, lastResults)
