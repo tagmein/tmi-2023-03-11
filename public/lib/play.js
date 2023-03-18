@@ -6,8 +6,10 @@ define('play', async function (load) {
   const { updateState } = navigate
   navigate.syncStateTo(async (state) => {
    const activeCell = await cell({ state, updateState })
-   document.body.innerHTML = ''
-   document.body.appendChild(activeCell.element)
+   if (activeCell?.element) {
+    document.body.innerHTML = ''
+    document.body.appendChild(activeCell.element)
+   }
   })
  }
 })

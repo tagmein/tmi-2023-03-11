@@ -39,6 +39,7 @@ define('cell', async function (load) {
     flex-direction: row;
     height: 47px;
     overflow-x: auto;
+    flex-shrink: 0;
     overflow-y: hidden;
     white-space: nowrap;
    }
@@ -51,8 +52,16 @@ define('cell', async function (load) {
     flex-direction: row;
     height: 47px;
     overflow-x: auto;
+    flex-shrink: 0;
     overflow-y: hidden;
     white-space: nowrap;
+   }
+   
+   & button {
+    line-height: 1;
+    height: 30px;
+    padding: 6px;
+    margin: 8px 0 0 8px;
    }
   `,
   toolbar: style('toolbar')`
@@ -63,6 +72,7 @@ define('cell', async function (load) {
     flex-direction: row;
     height: 47px;
     overflow-x: auto;
+    flex-shrink: 0;
     overflow-y: hidden;
     white-space: nowrap;
    }
@@ -75,7 +85,7 @@ define('cell', async function (load) {
     top: 10px;
    }
   `,
-  status: style('status')`
+  channelSelect: style('channel-select')`
    & {
     background-color: #ffffff;
     border-radius: 0;
@@ -177,8 +187,8 @@ define('cell', async function (load) {
   const spacer = newElement(classes.spacer)
   const signInOut = newElement(classes.link, 'a')
   signInOut.setAttribute('href', email
-   ? `/#session/end`
-   : '/#session/create'
+   ? `/#common/session/end`
+   : '/#common/session/create'
   )
   signInOut.innerText = email
    ? 'Sign out'
@@ -193,35 +203,35 @@ define('cell', async function (load) {
 
  function populateToolbar(toolbar, state) {
   const segments = state.split('/').filter(x => x.length > 0)
+  const channel = segments.shift()
   let path = []
   const homeLink = newElement(classes.link, 'a')
-  homeLink.setAttribute('href', '/#')
+  homeLink.setAttribute('href', `/#${channel}`)
   homeLink.innerText = 'Tag Me In'
   toolbar.appendChild(homeLink)
   for (const segment of segments) {
    const link = newElement(classes.link, 'a')
    path.push(segment)
    link.innerText = decodeURIComponent(segment)
-   link.setAttribute('href', `/#${path.join('/')}`)
+   link.setAttribute('href', `/#${channel}/${path.join('/')}`)
    toolbar.appendChild(link)
   }
  }
 
- let lastSelectedRoot = localStorage.getItem('root') ?? ''
-
- function populateStatus(status, roots) {
-  status.innerHTML = ''
-  for (const root of roots) {
-   if (!lastSelectedRoot?.length) {
-    lastSelectedRoot = root
-    localStorage.setItem('root', lastSelectedRoot)
-   }
+ function populateChannelSelect(channelSelect, channel, channels) {
+  const channelEntries = Object.entries(channels)
+  channelSelect.innerHTML = ''
+  for (const [channelId, channelDetail] of channelEntries) {
    const optionElement = document.createElement('option')
-   optionElement.innerText = root
-   if (root === lastSelectedRoot) {
+   optionElement.setAttribute('value', channelId)
+   optionElement.innerText = `${channelDetail.name} - ${channelId === 'common'
+    ? '(system)'
+    : channelDetail.owner
+    }`
+   if (channelId === channel) {
     optionElement.setAttribute('selected', 'selected')
    }
-   status.appendChild(optionElement)
+   channelSelect.appendChild(optionElement)
   }
  }
 
@@ -265,8 +275,13 @@ define('cell', async function (load) {
        },
        method: 'POST'
       })
-      const result = await response.json()
-      event.source.postMessage({ type: 'response', result, fetchId }, '*')
+      const result = await response.text()
+      const isJSON = result.startsWith('[') || result.startsWith('{')
+      event.source.postMessage({
+       type: 'response',
+       result: isJSON ? JSON.parse(result) : result,
+       fetchId
+      }, '*')
      }
      else {
       const response = await fetch(url, {
@@ -292,19 +307,37 @@ define('cell', async function (load) {
  window.addEventListener('message', handleFrameMessage, false)
 
  return async function ({ state, updateState }) {
+  const segments = state.split('/').filter(x => x.length > 0)
+  const channel = segments.shift()
+  if (channel !== 'common' && channel?.length !== 40) {
+   updateState(`common${state.length > 0 ? '/' : ''}${state}`)
+   return
+  }
+
+  const channelRoot = channel === 'common'
+   ? '/common'
+   : `/data/${channel}`
+
+  const currentChannelDetails = channel === 'common'
+   ? {
+    data: { name: 'Common' },
+    isOwner: false,
+    isCollected: true
+   }
+   : await TagMeIn.channelInfo(channel)
+
   const element = newElement(classes.container)
   const account = newElement(classes.account)
   const toolbar = newElement(classes.toolbar)
   const contentToolbar = newElement(classes.contentToolbar)
   const contents = newElement(classes.content)
-  const status = newElement(classes.status, 'select')
-  status.setAttribute('title', 'Channel to display')
+  const channelSelect = newElement(classes.channelSelect, 'select')
+  channelSelect.setAttribute('title', 'Channel to display')
   element.appendChild(account)
   element.appendChild(toolbar)
-  element.appendChild(status)
+  element.appendChild(channelSelect)
   element.appendChild(contentToolbar)
   element.appendChild(contents)
-  status.innerHTML = '<option disabled selected>loading...</option>'
   populateToolbar(toolbar, state)
   populateAccount(account)
   let lastResults
@@ -338,16 +371,12 @@ define('cell', async function (load) {
    }
    onChange?.(lastToggleState)
   }
+  async function changeChannel() {
+   updateState([channelSelect.value, ...segments].join('/'))
+  }
   async function renderSelectedResult() {
    contentToolbar.innerHTML = ''
-   if (status.value !== lastSelectedRoot) {
-    lastSelectedRoot = status.value
-    localStorage.setItem('root', lastSelectedRoot)
-   }
-   const root = lastSelectedRoot === 'common'
-    ? '/common'
-    : `/data/${lastSelectedRoot}`
-   const response = await fetch(`${root}/${state}`)
+   const response = await fetch([channelRoot, ...segments].join('/'))
    const htmlContent = await response.text()
    if (htmlContent.startsWith('[')) {
     const list = JSON.parse(htmlContent)
@@ -365,8 +394,74 @@ define('cell', async function (load) {
     contents.innerHTML = ''
     contents.appendChild(listContainer)
     populateToggle(contentToolbar, ['View'])
+    if (currentChannelDetails.isOwner) {
+     const newFolderButton = document.createElement('button')
+     newFolderButton.innerText = '+ folder'
+     const newFileButton = document.createElement('button')
+     newFileButton.innerText = '+ file'
+     contentToolbar.appendChild(newFolderButton)
+     contentToolbar.appendChild(newFileButton)
+     newFileButton.addEventListener('click', async function () {
+      const newFileName = prompt('File name')
+      if (!newFileName) {
+       return
+      }
+      const newPath = [channel, ...segments, newFileName].join('/')
+      const operationResult = await TagMeIn.newFile(newPath)
+      if (!operationResult?.completed) {
+       alert('Something went wrong')
+       return
+      }
+      updateState(newPath)
+     })
+     newFolderButton.addEventListener('click', async function () {
+      const newFolderName = prompt('Folder name')
+      if (!newFolderName) {
+       return
+      }
+      const newPath = [channel, ...segments, newFolderName].join('/')
+      const operationResult = await TagMeIn.newFolder(newPath)
+      if (!operationResult?.completed) {
+       alert('Something went wrong')
+       return
+      }
+      updateState(newPath)
+     })
+    }
+    else if (!currentChannelDetails.error && !currentChannelDetails.isCollected) {
+     const followButton = document.createElement('button')
+     followButton.innerText = 'Collect'
+     contentToolbar.appendChild(followButton)
+     followButton.addEventListener('click', async function () {
+      const operationResult = await TagMeIn.collectChannel(channel)
+      if (!operationResult?.completed) {
+       alert('Something went wrong')
+       return
+      }
+      alert('Channel collected')
+      contentToolbar.removeChild(followButton)
+     })
+    }
    }
    else {
+    let lastSavedContent = htmlContent
+    let currentContent = htmlContent
+    const saveButton = document.createElement('button')
+    saveButton.innerText = 'Save changes'
+    saveButton.addEventListener('click', async function () {
+     saveButton.setAttribute('disabled', 'disabled')
+     saveButton.innerText = 'Saving...'
+     try {
+      await TagMeIn.writeFile([channel, ...segments].join('/'), currentContent)
+      lastSavedContent = currentContent
+     }
+     catch (e) {
+      alert('Error: did not save changes')
+      saveButton.removeAttribute('disabled')
+     }
+     saveButton.innerText = 'Save changes'
+    })
+    saveButton.setAttribute('disabled', 'disabled')
     populateToggle(contentToolbar, ['Run', 'Edit'], mode => {
      contents.innerHTML = ''
      if (mode === 'Run') {
@@ -379,38 +474,50 @@ define('cell', async function (load) {
       iframe.setAttribute('sandbox', sandbox)
       iframe.setAttribute(
        'srcdoc',
-       htmlContent ?? 'not found'
+       currentContent ?? 'not found'
       )
       contents.appendChild(iframe)
      }
      else if (mode === 'Edit') {
       const source = newElement(classes.source, 'textarea')
-      source.value = htmlContent
+      source.value = currentContent
+      source.addEventListener('keyup', function () {
+       currentContent = source.value
+       if (currentContent === lastSavedContent) {
+        saveButton.setAttribute('disabled', 'disabled')
+       }
+       else {
+        saveButton.removeAttribute('disabled')
+       }
+      })
       contents.appendChild(source)
      }
     })
+    if (currentChannelDetails.isOwner) {
+     contentToolbar.appendChild(saveButton)
+    }
    }
   }
-  status.addEventListener('change', renderSelectedResult)
+  channelSelect.addEventListener('change', changeChannel)
   async function run() {
-   const data = await TagMeIn.read(state)
-   if (data?.results?.length > 0) {
+   const data = await TagMeIn.read(segments.join('/'), channel)
+   if (Object.keys(data?.results ?? {}).length > 0) {
     lastResults = data.results
-    populateStatus(status, lastResults)
+    populateChannelSelect(channelSelect, channel, lastResults)
     renderSelectedResult()
    }
    else {
-    status.innerHTML = '<option disabled selected>no results</option>'
+    channelSelect.innerHTML = '<option disabled selected>no results</option>'
    }
   }
-  run()
-   .then()
-   .catch(e => {
-    const error = newElement(classes.error)
-    error.innerText = e?.message ?? e ?? 'Unknown error'
-    element.innerHTML = ''
-    element.appendChild(error)
-   })
+  try {
+   await run()
+  } catch (e) {
+   const error = newElement(classes.error)
+   error.innerText = e?.message ?? e ?? 'Unknown error'
+   element.innerHTML = ''
+   element.appendChild(error)
+  }
   return { element }
  }
 })

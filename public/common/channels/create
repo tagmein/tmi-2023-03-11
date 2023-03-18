@@ -1,0 +1,30 @@
+<link href="/main.css" rel="stylesheet" type="text/css">
+<script src="/tagmein-client.js"></script>
+<script>
+ function createChannel(event) {
+  event.preventDefault()
+  TagMeIn.post('/channel/create', {
+   name: document.getElementById('channel-name').value
+  }).then(function (result) {
+   document.body.innerHTML = result.message
+  })
+  return false
+ }
+ </script>
+<form onsubmit="createChannel(event)" method="POST" enctype="multipart/form-data">
+ <h1>Create channel</h1>
+ <p>Channels are used to host content on Tag Me In. After you create a channel, you can share the channel URL with
+  anyone
+  and then they will be able
+  to read and follow your channel. Once someone knows your channel URL, it is not possible to hide your channel from
+  that person.
+  <label>
+   <div>Channel name</div>
+   <input id="channel-name" name="name" placeholder="My channel" required type="text" />
+  </label>
+ <p>
+  By creating a channel, you are agreeing to the
+  <a target="_top" href="/#common/documents/terms">Terms and Conditions</a>
+ </p>
+ <input type="submit" value="Create" />
+</form>

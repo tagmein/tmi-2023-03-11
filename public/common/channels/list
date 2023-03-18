@@ -1,0 +1,111 @@
+<link href="/main.css" rel="stylesheet" type="text/css" />
+<script src="/tagmein-client.js"></script>
+<style>
+ .list {
+  border-collapse: collapse;
+  width: 100%;
+ }
+
+ .list th {
+  font-weight: bold;
+  text-align: left;
+  color: #797979;
+  padding: 10px 10px 0;
+ }
+
+ .list td {
+  padding: 10px;
+ }
+
+ .list td button {
+  margin-top: 0;
+ }
+
+ .list td a {
+  cursor: pointer;
+  color: #4079a9;
+  text-decoration: underline;
+ }
+
+ .session {
+  border-bottom: 1px solid #c9c9c9;
+ }
+
+</style>
+<script>
+ async function channelList() {
+  const channels = await TagMeIn.get('/channel/list')
+  const channelsContainer = document.getElementById('session-list')
+  if (channels.error) {
+   document.body.innerHTML = ''
+   const errorElement = document.createElement('div')
+   errorElement.innerText = channels.error
+   errorElement.classList.add('error')
+   document.body.appendChild(errorElement)
+   return
+  }
+  Object.entries(channels).forEach(([channelId, channelData]) => {
+   const channelRow = document.createElement('tr')
+   channelRow.classList.add('session')
+   const channelCells = {
+    id: document.createElement('td'),
+    name: document.createElement('td'),
+    timestamp: document.createElement('td'),
+    owner: document.createElement('td'),
+    action: document.createElement('td'),
+   }
+   for (const element of [
+    channelCells.id,
+    channelCells.name,
+    channelCells.timestamp,
+    channelCells.owner,
+    channelCells.action
+   ]) {
+    channelRow.appendChild(element)
+   }
+   const channelLink = document.createElement('a')
+   channelLink.setAttribute('target', '_top')
+   channelLink.setAttribute('href', `/#${channelId}`)
+   channelLink.innerText = channelId
+   channelCells.id.appendChild(channelLink)
+   channelCells.name.innerText = channelData.name
+   channelCells.timestamp.innerText = channelData.timestamp
+    ? new Date(channelData.timestamp).toLocaleString()
+    : 'unknown'
+   channelCells.owner.innerText = channelData.owner ?? 'unknown'
+   const uncollectChannel = document.createElement('button')
+   channelCells.action.appendChild(uncollectChannel)
+   uncollectChannel.innerText = 'Uncollect'
+   if (channelData.current) {
+    uncollectChannel.setAttribute('disabled', 'disabled')
+   }
+   else {
+    uncollectChannel.addEventListener('click', async function () {
+     uncollectChannel.setAttribute('disabled', 'disabled')
+     const result = await TagMeIn.post('/channel/uncollect', { id: channelId })
+     if (result.completed) {
+      channelsContainer.removeChild(channelRow)
+     }
+     else {
+      uncollectChannel.removeAttribute('disabled')
+     }
+    })
+   }
+   channelsContainer.appendChild(channelRow)
+  })
+ }
+ window.addEventListener('DOMContentLoaded', channelList)
+</script>
+
+<main>
+ <h1>Collected channels</h1>
+ <table id="session-list" class="list">
+  <tr>
+   <th>Channel ID</th>
+   <th>Name</th>
+   <th>Timestamp</th>
+   <th>Owner</th>
+   <th>Action</th>
+  </tr>
+ </table>
+</main>

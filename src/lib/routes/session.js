@@ -80,12 +80,12 @@ module.exports = {
      <p><a target="_top" class="button" href="/#">Continue</a></p></form>
     `)
   }
-  return redirect('/#session/invalid')
+  return redirect('/#common/session/invalid')
  },
  async end({ request, requestBody }) {
   const { 'x-tagmein-key': key } = request.headers
   const session = await data.read(`session:${key}`)
-  if (!session) {
+  if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
   const account = await data.read(`account:${session.email}`)
@@ -107,7 +107,7 @@ module.exports = {
  async list({ request }) {
   const { 'x-tagmein-key': key } = request.headers
   const session = await data.read(`session:${key}`)
-  if (!session) {
+  if (!session?.email) {
    return json({ error: 'unauthorized' })
   }
   const account = await data.read(`account:${session.email}`)

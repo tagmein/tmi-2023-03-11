@@ -2,7 +2,7 @@
 <form>
  <h1>Invalid information</h1>
  <p>That information didn't match an existing account</p>
- <a class="button" target="_top" href="/#session/create">
+ <a class="button" target="_top" href="/#common/session/create">
   Try again
  </a>
 </form>

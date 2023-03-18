@@ -26,7 +26,7 @@
  </label>
  <p>
   By signing in, you are agreeing to the
-  <a target="_top" href="/#documents/terms">Terms and Conditions</a>
+  <a target="_top" href="/#common/documents/terms">Terms and Conditions</a>
  </p>
  <input type="submit" value="Sign in" />
 </form>

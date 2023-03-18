@@ -10,6 +10,7 @@ function loadRoutes([routesString]) {
 }
 
 const routes = loadRoutes`
+ channel
  data
  default
  session
@@ -17,10 +18,18 @@ const routes = loadRoutes`
 
 const routeMap = {
  'GET /data': routes.data.read,
- 'POST /data': routes.data.write,
+ 'POST /data/file/new': routes.data.newFile,
+ 'POST /data/file/write': routes.data.writeFile,
+ 'POST /data/folder/new': routes.data.newFolder,
+ 'GET /channel': routes.channel.get,
+ 'GET /channel/list': routes.channel.list,
  'GET /session/list': routes.session.list,
  'POST /session/create': routes.session.create,
- 'POST /session/end': routes.session.end
+ 'POST /session/end': routes.session.end,
+ 'POST /channel/create': routes.channel.create,
+ 'POST /channel/collect': routes.channel.collect,
+ 'POST /channel/uncollect': routes.channel.uncollect,
+ 'POST /channel/edit': routes.channel.edit
 }
 
 module.exports = async function ({

@@ -8,7 +8,7 @@ if (!fs.existsSync(dataRoot)) {
 
 module.exports = {
  data: {
-  async read(key) {
+  async read(key, defaultValue) {
    return new Promise(function (resolve, reject) {
     fs.readFile(
      path.join(dataRoot, encodeURIComponent(key)),
@@ -16,7 +16,7 @@ module.exports = {
      function (error, contents) {
       if (error) {
        if (error.message.includes('ENOENT')) {
-        resolve({})
+        resolve(defaultValue ?? {})
        } else {
         reject(error)
        }
