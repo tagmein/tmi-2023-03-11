@@ -17,12 +17,18 @@ module.exports = {
   const accountChannels = await data.read(`account.channels:${session.email}`)
   const { name } = requestBody
   const newChannelId = randomKey(40)
-  await new Promise(
-   resolve => modules.fs.mkdir(
-    modules.path.join(rootPath, 'data', newChannelId),
-    resolve
-   )
-  )
+  await new Promise((resolve, reject) => modules.fs.mkdir(
+   modules.path.join(rootPath, 'data', newChannelId),
+   { recursive: true },
+   function (error) {
+    if (error) {
+     reject(error)
+    }
+    else {
+     resolve()
+    }
+   }
+  ))
   const newChannelData = {
    name,
    owner: session.email,
