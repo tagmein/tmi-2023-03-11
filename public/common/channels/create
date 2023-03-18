@@ -6,11 +6,15 @@
   TagMeIn.post('/channel/create', {
    name: document.getElementById('channel-name').value
   }).then(function (result) {
-   document.body.innerHTML = result.message
+   if (result.error) {
+    document.body.innerHTML = `<p class="error">${result.error}</p>`
+   } else {
+    document.body.innerHTML = result.message
+   }
   })
   return false
  }
- </script>
+</script>
 <form onsubmit="createChannel(event)" method="POST" enctype="multipart/form-data">
  <h1>Create channel</h1>
  <p>Channels are used to host content on Tag Me In. After you create a channel, you can share the channel URL with
