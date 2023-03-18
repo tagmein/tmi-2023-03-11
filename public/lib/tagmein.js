@@ -30,6 +30,9 @@ define('tagmein', async function (load) {
    const channelPart = channel ? `&channel=${channel}` : ''
    return get(`/data?path=${encodeURIComponent(path)}${channelPart}`)
   },
+  deleteFile(path) {
+   return post('/data/file/delete', { path })
+  },
   newFile(path) {
    return post('/data/file/new', { path })
   },

@@ -18,6 +18,7 @@ const routes = loadRoutes`
 
 const routeMap = {
  'GET /data': routes.data.read,
+ 'POST /data/file/delete': routes.data.deleteFile,
  'POST /data/file/new': routes.data.newFile,
  'POST /data/file/write': routes.data.writeFile,
  'POST /data/folder/new': routes.data.newFolder,

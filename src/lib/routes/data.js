@@ -80,6 +80,40 @@ module.exports = {
    content
   }
  },
+ async deleteFile({ modules, request, requestBody, rootPath }) {
+  const { 'x-tagmein-key': key } = request.headers
+  const session = await data.read(`session:${key}`)
+  if (!session?.email) {
+   return json({ error: 'unauthorized' })
+  }
+  const [channel, ...segments] = requestBody.path.split('/')
+  const channelData = await data.read(`channel:${channel}`)
+  if (channelData.owner !== session.email) {
+   return json({ error: 'unauthorized' })
+  }
+  try {
+   await new Promise((resolve, reject) => {
+    modules.fs.unlink(
+     modules.path.join(
+      rootPath,
+      'data',
+      channel,
+      ...segments
+     ),
+     function (error) {
+      if (error) {
+       reject(error)
+      } else {
+       resolve()
+      }
+     }
+    )
+   })
+  } catch (e) {
+   return json({ error: e.message })
+  }
+  return json({ completed: true })
+ },
  async newFile({ modules, request, requestBody, rootPath }) {
   const { 'x-tagmein-key': key } = request.headers
   const session = await data.read(`session:${key}`)

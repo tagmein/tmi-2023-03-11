@@ -202,7 +202,9 @@ define('cell', async function (load) {
  }
 
  function populateToolbar(toolbar, state) {
-  const segments = state.split('/').filter(x => x.length > 0)
+  const segments = state.split('/')
+   .filter(x => x.length > 0)
+   .map(decodeURIComponent)
   const channel = segments.shift()
   let path = []
   const homeLink = newElement(classes.link, 'a')
@@ -307,7 +309,9 @@ define('cell', async function (load) {
  window.addEventListener('message', handleFrameMessage, false)
 
  return async function ({ state, updateState }) {
-  const segments = state.split('/').filter(x => x.length > 0)
+  const segments = state.split('/')
+   .filter(x => x.length > 0)
+   .map(decodeURIComponent)
   const channel = segments.shift()
   if (channel !== 'common' && channel?.length !== 40) {
    updateState(`common${state.length > 0 ? '/' : ''}${state}`)
@@ -448,6 +452,25 @@ define('cell', async function (load) {
     let currentContent = htmlContent
     const saveButton = document.createElement('button')
     saveButton.innerText = 'Save changes'
+    const deleteButton = document.createElement('button')
+    deleteButton.innerText = 'Delete'
+    deleteButton.addEventListener('click', async function () {
+     if (!confirm('Are you sure you want to delete this file?')) {
+      return
+     }
+     deleteButton.setAttribute('disabled', 'disabled')
+     deleteButton.innerText = 'Deleting...'
+     try {
+      await TagMeIn.deleteFile([channel, ...segments].join('/'), currentContent)
+      lastSavedContent = currentContent
+     }
+     catch (e) {
+      alert('Error: did not delete')
+      deleteButton.removeAttribute('disabled')
+     }
+     deleteButton.innerText = 'Delete'
+     updateState([channel, ...segments.slice(0, segments.length - 1)].join('/'))
+    })
     saveButton.addEventListener('click', async function () {
      saveButton.setAttribute('disabled', 'disabled')
      saveButton.innerText = 'Saving...'
@@ -495,6 +518,7 @@ define('cell', async function (load) {
     })
     if (currentChannelDetails.isOwner) {
      contentToolbar.appendChild(saveButton)
+     contentToolbar.appendChild(deleteButton)
     }
    }
   }
