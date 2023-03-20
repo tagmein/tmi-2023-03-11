@@ -339,20 +339,40 @@ define('cell', async function (load) {
   }
  }
 
- function populateChannelSelect(channelSelect, channel, channels) {
-  const channelEntries = Object.entries(channels)
-  channelSelect.innerHTML = ''
-  for (const [channelId, channelDetail] of channelEntries) {
-   const optionElement = document.createElement('option')
-   optionElement.setAttribute('value', channelId)
-   optionElement.innerText = `${channelDetail.name} - ${channelId === 'common'
-    ? '(system)'
-    : channelDetail.owner
-    }`
-   if (channelId === channel) {
-    optionElement.setAttribute('selected', 'selected')
+ function groupEntriesBy(entries, groupFunction) {
+  const groups = {}
+  const groupedEntries = []
+  for (const [k, v] of entries) {
+   const group = groupFunction(k, v)
+   if (!(group in groups)) {
+    const entries = []
+    groupedEntries.push([group, entries])
+    groups[group] = entries
    }
-   channelSelect.appendChild(optionElement)
+   groups[group].push([k, v])
+  }
+  return groupedEntries
+ }
+
+ function populateChannelSelect(channelSelect, channel, channels) {
+  const groupedChannelEntries = groupEntriesBy(
+   Object.entries(channels),
+   (k, v) => k === 'common' ? 'System' : v.owner
+  )
+  channelSelect.innerHTML = ''
+  for (const [groupName, channelEntries] of groupedChannelEntries) {
+   const optionGroup = document.createElement('optgroup')
+   optionGroup.setAttribute('label', groupName)
+   channelSelect.appendChild(optionGroup)
+   for (const [channelId, channelDetail] of channelEntries) {
+    const optionElement = document.createElement('option')
+    optionElement.setAttribute('value', channelId)
+    optionElement.innerText = channelDetail.name
+    if (channelId === channel) {
+     optionElement.setAttribute('selected', 'selected')
+    }
+    optionGroup.appendChild(optionElement)
+   }
   }
  }
 
