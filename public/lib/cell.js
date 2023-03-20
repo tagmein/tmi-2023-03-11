@@ -15,7 +15,7 @@ function encodePath(...segments) {
 }
 
 function createIframe(currentContent) {
- const sandbox = ['downloads', 'forms', 'scripts', 'top-navigation']
+ const sandbox = ['downloads', 'forms', 'popups', 'scripts', 'top-navigation']
   .map((x) => `allow-${x}`)
   .join(' ')
  const iframe = document.createElement('iframe')
