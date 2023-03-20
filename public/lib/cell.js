@@ -216,6 +216,11 @@ define('cell', async function (load) {
     z-index: 1;
    }
    
+   &.directory {
+    display: flex;
+    flex-direction: column;
+   }
+   
    iframe& {
     height: 480px;
     width: 480px;
@@ -242,6 +247,7 @@ define('cell', async function (load) {
    const list = JSON.parse(htmlContent)
    const listContainer = document.createElement('div')
    listContainer.classList.add(classes.preview)
+   listContainer.classList.add('directory')
    for (const item of list) {
     const link = newElement(classes.link, 'a')
     link.setAttribute(
