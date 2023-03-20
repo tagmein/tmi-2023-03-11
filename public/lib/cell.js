@@ -227,6 +227,7 @@ define('cell', async function (load) {
    }
    
    & > a {
+    box-sizing: border-box;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
