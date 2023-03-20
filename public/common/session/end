@@ -1,18 +1,23 @@
 <link href="/main.css" rel="stylesheet" type="text/css" />
 <script src="/tagmein-client.js"></script>
-<form>
- <p>You are now signed out</p>
- <script>
-  async function sessionEnd() {
-   const session = await TagMeIn.getSession()
-   if (session) {
-    await TagMeIn.post('/session/end', { id: session.id })
-   }
-   window.top.postMessage({
-    type: 'signout'
-   }, '*')
+<script>
+ async function sessionEnd() {
+  const session = await TagMeIn.getSession()
+  if (session) {
+   await TagMeIn.post('/session/end', { id: session.id })
   }
-  window.addEventListener('DOMContentLoaded', sessionEnd)
- </script>
+  window.top.postMessage({
+   type: 'signout'
+  }, '*')
+  document.getElementById('initial').style.display = 'none'
+  document.getElementById('result').style.display = 'block'
+ }
+</script>
+<form id="initial">
+ <p>Click button below to end session</p>
+ <p><a class="button" onclick="sessionEnd()">Sign out</a></p>
+</form>
+<form id="result" style="display: none;">
+ <p>You are now signed out</p>
  <p><a target="_top" class="button" href="/#">Continue</a></p>
 </form>

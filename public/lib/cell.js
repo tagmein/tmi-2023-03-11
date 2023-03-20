@@ -6,8 +6,27 @@ function newElement(className, tagName = 'div') {
  return element
 }
 
+function decodePath(path) {
+ return path.split('/').map(decodeURIComponent)
+}
+
 function encodePath(...segments) {
  return segments.map(encodeURIComponent).join('/')
+}
+
+function createIframe(currentContent) {
+ const sandbox = ['downloads', 'forms', 'scripts', 'top-navigation']
+  .map((x) => `allow-${x}`)
+  .join(' ')
+ const iframe = document.createElement('iframe')
+ iframe.setAttribute('referrerpolicy', 'no-referrer')
+ iframe.setAttribute('credentialless', true)
+ iframe.setAttribute('sandbox', sandbox)
+ iframe.setAttribute(
+  'srcdoc',
+  currentContent ?? 'not found'
+ )
+ return iframe
 }
 
 define('cell', async function (load) {
@@ -181,7 +200,95 @@ define('cell', async function (load) {
     top: 0;
     width: 100%;
    }
+  `,
+  preview: style('preview')`
+   & {
+    background-color: #ffffff;
+    border: 1px solid #c9c9c9;
+    box-shadow: 0 2px 8px #00000049;
+    box-sizing: border-box;
+    left: 0;
+    max-width: 100vw;
+    min-width: 100%;
+    overflow: hidden;
+    position: absolute;
+    top: 100%;
+    z-index: 1;
+   }
+   
+   iframe& {
+    height: 480px;
+    width: 480px;
+   }
+   
+   & > a {
+    width: 100%;
+   }
   `
+ }
+
+ async function generatePreview(path) {
+  const itemPath = path.slice()
+  const channel = itemPath.shift()
+  const channelRoot = channel === 'common'
+   ? '/common'
+   : `/data/${channel}`
+  const response = await fetch([channelRoot, encodePath(...itemPath)].join('/'))
+  const htmlContent = await response.text()
+  if (htmlContent.startsWith('[')) {
+   const list = JSON.parse(htmlContent)
+   const listContainer = document.createElement('div')
+   listContainer.classList.add(classes.preview)
+   for (const item of list) {
+    const link = newElement(classes.link, 'a')
+    link.setAttribute(
+     'href',
+     `/#${encodePath(...path, item.name)}`
+    )
+    link.innerText = item.name
+    link.setAttribute('data-type', item.type)
+    listContainer.appendChild(link)
+   }
+   return listContainer
+  }
+  else {
+   const iframe = createIframe(htmlContent)
+   iframe.classList.add(classes.preview)
+   return iframe
+  }
+ }
+
+
+ let activeHoverPreview
+ let activeHoverPreviewContent
+ function hoverPreview(link) {
+  let linkPreviewTimeout
+  link.addEventListener('mouseout', async function () {
+   linkPreviewTimeout = setTimeout(() => {
+    if (activeHoverPreview === link) {
+     activeHoverPreview.removeChild(
+      activeHoverPreviewContent
+     )
+     activeHoverPreview = undefined
+     activeHoverPreviewContent = undefined
+    }
+   }, 500)
+  })
+  link.addEventListener('mouseover', async function () {
+   clearTimeout(linkPreviewTimeout)
+   if (activeHoverPreview !== link) {
+    if (activeHoverPreview) {
+     activeHoverPreview.removeChild(
+      activeHoverPreviewContent
+     )
+    }
+    activeHoverPreview = link
+    activeHoverPreviewContent = await generatePreview(
+     decodePath(link.getAttribute('href').substring(2))
+    )
+    link.appendChild(activeHoverPreviewContent)
+   }
+  })
  }
 
  function populateAccount(account) {
@@ -203,10 +310,6 @@ define('cell', async function (load) {
   account.appendChild(message)
   account.appendChild(spacer)
   account.appendChild(signInOut)
- }
-
- function decodePath(path) {
-  return path.split('/').map(decodeURIComponent)
  }
 
  function populateToolbar(toolbar, state) {
@@ -398,6 +501,7 @@ define('cell', async function (load) {
      link.innerText = item.name
      link.setAttribute('data-type', item.type)
      listContainer.appendChild(link)
+     hoverPreview(link)
     }
     contents.innerHTML = ''
     contents.appendChild(listContainer)
@@ -492,18 +596,7 @@ define('cell', async function (load) {
     populateToggle(contentToolbar, ['Run', 'Edit'], mode => {
      contents.innerHTML = ''
      if (mode === 'Run') {
-      const sandbox = ['downloads', 'forms', 'scripts', 'top-navigation']
-       .map((x) => `allow-${x}`)
-       .join(' ')
-      const iframe = document.createElement('iframe')
-      iframe.setAttribute('referrerpolicy', 'no-referrer')
-      iframe.setAttribute('credentialless', true)
-      iframe.setAttribute('sandbox', sandbox)
-      iframe.setAttribute(
-       'srcdoc',
-       currentContent ?? 'not found'
-      )
-      contents.appendChild(iframe)
+      contents.appendChild(createIframe(currentContent))
      }
      else if (mode === 'Edit') {
       const source = newElement(classes.source, 'textarea')
